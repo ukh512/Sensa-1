@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8"/>
+    <title>Sensa</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #ffffff;
+            color: #003366;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 80px;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 20px;
+        }
+        .sidebar button {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        .main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            font-style: italic;
+            color: #003366;
+            margin-bottom: 20px;
+        }
+        .photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #ccc;
+            margin: 10px auto;
+        }
+        .employee-name {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .rating-options {
+            font-size: 40px;
+            margin: 20px 0;
+        }
+        .rating-options span {
+            margin: 0 10px;
+            cursor: pointer;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .rating-options span.selected {
+            transform: scale(1.5);
+        }
+        .submit-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #00c3a5;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #thank-you {
+            display: none;
+            font-size: 24px;
+            color: #003366;
+            margin-top: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 100px auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 300px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .modal-content button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 18px;
+            background-color: #003366;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <button onclick="openModal()">👤</button>
+    <button onclick="toggleRatingType()">⭐</button>
+</div>
+<div class="main">
+    <div class="logo">Sensa</div>
+    <div class="photo" id="photoPlaceholder"></div>
+    <div class="employee-name" id="employeeName">Выберите сотрудника</div>
+    <div class="rating-options" id="ratingArea"></div>
+    <button class="submit-btn" onclick="submitRating()">Отправить</button>
+    <div id="thank-you">Спасибо!</div>
+</div>
+<div class="modal" id="employeeModal">
+    <div class="modal-content">
+        <button onclick="selectEmployee('Шахзода')">Шахзода</button>
+        <button onclick="selectEmployee('Азам')">Азам</button>
+        <button onclick="selectEmployee('Малика')">Малика</button>
+    </div>
+</div>
+<script>
+    let currentEmployee = '';
+    let currentRatingType = 0;
+    let selectedRatingIndex = -1;
+    const ratingTypes = [
+        ['⭐', '⭐', '⭐', '⭐', '⭐'],
+        ['🙁', '😐', '🙂', '😊', '😃']
+    ];
+
+    function openModal() {
+        document.getElementById("employeeModal").style.display = "block";
+    }
+
+    function selectEmployee(name) {
+        currentEmployee = name;
+        document.getElementById("employeeName").innerText = name;
+        document.getElementById("employeeModal").style.display = "none";
+        renderRatingOptions();
+    }
+
+    function toggleRatingType() {
+        currentRatingType = (currentRatingType + 1) % ratingTypes.length;
+        selectedRatingIndex = -1;
+        renderRatingOptions();
+    }
+
+    function renderRatingOptions() {
+        const container = document.getElementById("ratingArea");
+        container.innerHTML = "";
+        ratingTypes[currentRatingType].forEach((emoji, index) => {
+            const span = document.createElement("span");
+            span.innerText = emoji;
+            span.className = "rating-icon";
+            span.onclick = () => {
+                selectedRatingIndex = index;
+                document.querySelectorAll(".rating-icon").forEach((s, i) => {
+                    s.classList.remove("selected");
+                    if (currentRatingType === 0 && i <= index) {
+                        s.classList.add("selected");
+                    } else if (currentRatingType === 1 && i === index) {
+                        s.classList.add("selected");
+                    }
+                });
+            };
+            container.appendChild(span);
+        });
+    }
+
+    function submitRating() {
+        if (!currentEmployee || selectedRatingIndex === -1) {
+            alert("Выберите сотрудника и оценку");
+            return;
+        }
+        const selectedRating = ratingTypes[currentRatingType][selectedRatingIndex];
+
+        fetch("https://script.google.com/macros/s/AKfycbxO0jRBwrxeR-jKr0DkgwZMdAM_ac267kOgL_6Vlu32eBD2cxhB4-eTgumZQ2j51XazXg/exec", {
+            method: "POST",
+            body: JSON.stringify({ name: currentEmployee, rating: selectedRating }),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then(() => {
+            document.getElementById("thank-you").style.display = "block";
+            selectedRatingIndex = -1;
+            renderRatingOptions();
+            document.querySelectorAll(".rating-icon").forEach(s => s.classList.remove("selected"));
+            setTimeout(() => {
+                document.getElementById("thank-you").style.display = "none";
+            }, 2000);
+        });
+    }
+</script>
+</body>
+</html>
